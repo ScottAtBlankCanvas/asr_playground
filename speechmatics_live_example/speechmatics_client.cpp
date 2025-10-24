@@ -57,7 +57,7 @@ using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;  // use wss:
-typedef client::connection_ptr connection;
+typedef client::connection_ptr connection_ptr;
 typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
 typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 
@@ -102,7 +102,7 @@ public:
     void start(string uri, string api_key) {
         cout << ">> start url: " << uri << " key: " << api_key << endl;
         websocketpp::lib::error_code ec;
-        client::connection con = m_websocket.get_connection(uri, ec);
+        connection_ptr con = m_websocket.get_connection(uri, ec);
 
         if (ec) {
             cout << "   error        : " << ec << " - " << ec.message() << endl;
@@ -163,7 +163,7 @@ public:
 
 
     void on_fail(websocketpp::connection_hdl hdl) {
-        client::connection con = m_websocket.get_con_from_hdl(hdl);
+        connection_ptr con = m_websocket.get_con_from_hdl(hdl);
 
         cout << "<< on_fail" << endl;
         cout << "   state        : " << con->get_state() << endl;
@@ -179,7 +179,7 @@ public:
     }
 
     void on_interrupt(websocketpp::connection_hdl hdl) {
-        client::connection con = m_websocket.get_con_from_hdl(hdl);
+        connection_ptr con = m_websocket.get_con_from_hdl(hdl);
 
         cout << "<< on_interrupt" << endl;
         cout << "   state        : " << con->get_state() << endl;
