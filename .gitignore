@@ -4,3 +4,4 @@
 *.wav
 /speechmatics_live_example/speechmatics_client
 *.o
+.DS_Store
