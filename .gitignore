@@ -1,0 +1,6 @@
+/libs/boost_1_89_0
+/libs/boost_1_89_0.tar.gz
+/libs/websocketpp
+*.wav
+/speechmatics_live_example/speechmatics_client
+*.o
