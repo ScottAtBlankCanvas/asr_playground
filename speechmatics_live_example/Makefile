@@ -2,8 +2,10 @@ CPP=clang
 CXX=clang
 CC=clang
 
-BOOST_HOME = ../libs/boost_1_89_0
-WEBSOCKETPP_HOME = ../libs/websocketpp-0.8.2/websocketpp
+LIB_HOME = ~/code/oss
+
+BOOST_HOME = $(LIB_HOME)/boost_1_89_0
+WEBSOCKETPP_HOME = $(LIB_HOME)/websocketpp-0.8.2/websocketpp
 
 # additional flags
 CPPFLAGS += -I /usr/local/include -std=c++14 -stdlib=libc++ -I $(WEBSOCKETPP_HOME) -I $(BOOST_HOME)

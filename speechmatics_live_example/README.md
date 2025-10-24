@@ -9,14 +9,17 @@ A more robust solution would use a message queue and connect to an audio pipelin
 
 ## Building
 
-This example uses boost and websocket++.  These need to be downloaded and pointed to by the Mkefile
+This example uses boost and websocket++.  These need to be downloaded and pointed to by the Makefile
+
 
 Currently this builds on Mac x64, my current development machine.  It should not be too difficult to adjust for other OS-es and toolchains
 
-### Building boost
+### Downloading and Building boost
+
+Create some library location.  I use ~/code/oss
 
 ```nix
-cd asr_playground/libs
+~/code/oss
 wget https://archives.boost.io/release/1.89.0/source/boost_1_89_0.tar.gz
 tar xf boost_1_89_0.tar.gz
 cd boost_1_89_0
@@ -27,6 +30,8 @@ cd boost_1_89_0
 
 ### Downloading websocketpp
 
+Create some library location.  I use ~/code/oss
+
 WebSocket++ is an include-only library so does not need built
 
 ```nix
@@ -35,6 +40,8 @@ git clone https://github.com/zaphoyd/websocketpp.git
 ```
 
 ### Building client
+
+Change speechmatics_live_example/Makefile to point to your Boost and WebSocket++ location (if other than ~/code/oss/)
 
 ```nix
 cd asr_playground/speechmatics_live_example
