@@ -25,11 +25,13 @@ cd boost_1_89_0
 ./b2 toolset=clang cxxflags="-std=c++14 -stdlib=libc++" linkflags="-stdlib=libc++"
 ```
 
-### Building websocketpp
+### Downloading websocketpp
+
+WebSocket++ is an include-only library so does not need built
 
 ```nix
 cd asr_playground/libs
-git clone git https://github.com/zaphoyd/websocketpp.git
+git clone https://github.com/zaphoyd/websocketpp.git
 ```
 
 ### Building client
