@@ -62,13 +62,73 @@ typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
 typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 
 
+class options {
+public:
+    options(int argc, char* argv[]) {
+        for (int i = 1; i < argc; ++i) {
+            string arg = argv[i];
+//        cout << "Argument " << i << ": " << arg << endl;
+
+            if (arg == "--help" ) {
+	        show_usage(argv[0]);
+	        exit(0);
+            } else if (arg == "--uri" && i + 1 < argc) {
+                this->uri = argv[++i];
+                    cout << "uri     : " << this->uri << endl;
+            } else if (arg == "--file" && i + 1 < argc) {
+                this->test_file = argv[++i];
+                cout << "file    : " << this->test_file << endl;
+            } else if (arg == "--key" && i + 1 < argc) {
+                this->api_key = argv[++i];
+                cout << "key     : " << this->api_key << endl;
+            } else if (arg == "--partials" && i + 1 < argc) {
+                this->partials = argv[++i];
+                cout << "partials: " << this->partials << endl;
+            } else if (arg == "--entities" && i + 1 < argc) {
+                this->entities = argv[++i];
+                cout << "entities: " << this->entities << endl;
+            } else if (arg == "--model" && i + 1 < argc) {
+                this->model = argv[++i];
+                cout << "model   : " << this->model << endl;
+            } else if (arg == "--lang" && i + 1 < argc) {
+                this->lang = argv[++i];
+                cout << "lang    : " << this->lang << endl;
+            }
+	}
+    }
+private:
+    void show_usage(char* pgm) {
+        cout << "Usage: " << pgm << " --key <api_key> --file <filename> [optional] " << endl;
+        cout << "  optional:" << endl;
+        cout << "  --help            : this message" << endl;
+        cout << endl;
+        cout << "  --lang            : Input language (def: en)" << endl;
+        cout << "  --uri             : Speechmatics endpoint " << endl;
+        cout << "  --partials        : Enable partials (def: false)" << endl;
+        cout << "  --entities        : Enable entities (def: false)" << endl;
+        cout << "  --model           : Operating point standard|enhanced (def: standard)" << endl;
+
+        exit(0);
+    }
+
+public:
+    string uri       = "wss://wus.rt.speechmatics.com/v2";
+    string api_key   = "Unset API Token";
+    string test_file = "speech_test.wav";
+    string lang      = "en";
+    string partials  = "false";
+    string entities  = "false";
+    string model     = "standard";
+};
+
+
 class speechmatics_test {
 public:
     typedef speechmatics_test type;
 
-    speechmatics_test (string test_file) {
+    speechmatics_test (const options& opts) : m_opts(opts) {
 
-        this->m_file_path = test_file;
+//        this->m_opts = opts;
 
         init_logging(); 
         init_network(); 
@@ -99,10 +159,10 @@ public:
         m_websocket.set_interrupt_handler(bind(&type::on_interrupt,this,::_1));
     }
 
-    void start(string uri, string api_key) {
-        cout << ">> start url: " << uri << " key: " << api_key << endl;
+    void start() {
+        cout << ">> start url: " << m_opts.uri << " key: " << m_opts.api_key << endl;
         websocketpp::lib::error_code ec;
-        connection_ptr con = m_websocket.get_connection(uri, ec);
+        connection_ptr con = m_websocket.get_connection(m_opts.uri, ec);
 
         if (ec) {
             cout << "   error        : " << ec << " - " << ec.message() << endl;
@@ -110,7 +170,7 @@ public:
         }
 
         // Add the Authorization header with a Bearer token
-        con->replace_header("Authorization", "Bearer " + api_key);
+        con->replace_header("Authorization", "Bearer " + m_opts.api_key);
 
         m_websocket.connect(con);
 
@@ -242,7 +302,7 @@ public:
         "{ "
             " \"message\": \"StartRecognition\", "
             " \"audio_format\": {  \"type\": \"raw\",  \"encoding\": \"pcm_s16le\",  \"sample_rate\": 16000 }, "
-            " \"transcription_config\": {  \"language\": \"en\" }"
+            " \"transcription_config\": {  \"language\": \"" + m_opts.lang + "\", \"operating_point\": \"" + m_opts.model + "\", \"enable_partials\": "+ m_opts.partials + ", \"enable_entities\":"+m_opts.entities+" }"
         "}";
         cout << "   " << m << endl;
         cout << endl;
@@ -253,18 +313,21 @@ public:
     // This is a bit hacky bc we should send audio data in real time and in a separate thread
     // But works OK for verifying Speechmatics API
     void speechmatics_stream_wav_file(websocketpp::connection_hdl hdl) {
-       int BUFFER_SIZE = 1024;
+       const int MAX_SENDS = 500;
+       const int BUFFER_SIZE = 1024;
        vector<char> buffer(BUFFER_SIZE);
+       int count = 0;
 
-       ifstream infile(m_file_path, std::ios::binary);
+       ifstream infile(m_opts.test_file, std::ios::binary);
        if (!infile.is_open()) {
-           cout << "   Error opening file: " << m_file_path << endl;
-       return;
+           cout << "   Error opening file: " << m_opts.test_file << endl;
+	   exit(-1);
        }
-       cout << ">> speechmatics_stream_wav_file: " << m_file_path << endl;
+       cout << ">> speechmatics_stream_wav_file: " << m_opts.test_file << endl;
 
        // true as long as read fills buffer
        while (infile.read(buffer.data(), BUFFER_SIZE)) {
+           if (count++ > MAX_SENDS) goto do_exit;
            send_binary_data(hdl, buffer);
        }
 
@@ -273,35 +336,26 @@ public:
            send_binary_data(hdl, buffer, infile.gcount());
        }
 
-       infile.close();
+       do_exit:
+              infile.close();
 
-       cout << endl;
+              cout << endl;
     }
 
 private:
     client m_websocket;
     bool m_running = false;
-    string m_file_path = "speech_test.wav";
+    const options &m_opts;
 };
 
 int main(int argc, char* argv[]) {
-    string uri = "wss://wus.rt.speechmatics.com/v2";
-    string api_key = "Unset API Token";
-    string test_file = "speech_test.wav";
-
-    if (argc >= 2) uri = argv[1];
-    if (argc >= 3) api_key = argv[2];
-    if (argc >= 4) test_file = argv[3];
-
-    cout << "Testing Speechmatics streaming" << endl;
-    cout << "  uri : " << uri << endl;
-    cout << "  api : " << api_key.substr(0,6) << "*" << endl;
-    cout << "  file: " << test_file << endl;
 
     try {
-        speechmatics_test endpoint(test_file);
+        options opts(argc, argv);
 
-        endpoint.start(uri, api_key);
+        speechmatics_test endpoint(opts);
+
+        endpoint.start();
 
     } catch (websocketpp::exception const & e) {
         cout << e.what() << endl;
